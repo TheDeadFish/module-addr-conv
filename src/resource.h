@@ -11,3 +11,4 @@
 #define IDC_RVA_ADDR                            1005
 #define IDC_LIST1                               1006
 #define IDC_LOAD                                1007
+#define IDC_EDIT1                               1008

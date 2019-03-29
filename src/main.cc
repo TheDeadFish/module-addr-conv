@@ -47,6 +47,9 @@ void load_module(HWND hwnd)
 	if(!base) { contError(hwnd, 
 		"failed to load module"); return; }
 		
+	setDlgItemText(hwnd, IDC_EDIT1, ofn.lpstrFile);
+		
+		
 	edt_init(hwnd, base);
 	EnableDlgItem(hwnd, IDC_MOD_BASE, FALSE);
 	EnableDlgItem(hwnd, IDC_RVA_ADDR, TRUE);
