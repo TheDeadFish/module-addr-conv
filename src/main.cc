@@ -75,7 +75,18 @@ bool update_mask_chk(int ctrlId) {
 	return update_mask[ctrlId-IDC_MOD_ADDR]; }
 void update_mask_set(int ctrlId, int x) {
 	update_mask[ctrlId-IDC_MOD_ADDR] = x; }
+	
+u64 addr_mapper(HWND hwnd, int subId, int addId, u64 value)
+{
+	u64 rva;
 
+	if(__builtin_sub_overflow(value, getDlgItemHex64(hwnd, subId), &rva))
+		return -1;
+	if(__builtin_add_overflow(rva, getDlgItemHex64(hwnd, addId), &value))
+		return -1;
+		
+	return value;
+}
 
 void edt_update(HWND hwnd, int ctrlId)
 {
@@ -84,20 +95,20 @@ void edt_update(HWND hwnd, int ctrlId)
 	update_mask_set(ctrlId, 1);
 	SCOPE_EXIT(update_mask_set(ctrlId, 0));
 	
-	ULONGLONG lod_diff = getDlgItemHex64(hwnd, IDC_LOD_BASE)
-		- getDlgItemHex64(hwnd, IDC_MOD_BASE);
 	u64 value = getDlgItemHex64(hwnd, ctrlId);
 	
 	
 	switch(ctrlId) {
 	case IDC_LOD_ADDR:
-		if(!update_mask_chk(IDC_MOD_ADDR))
-			setDlgItemHex64(hwnd, IDC_MOD_ADDR, value - lod_diff, 8);
+		if(!update_mask_chk(IDC_MOD_ADDR)) {
+			setDlgItemHex64(hwnd, IDC_MOD_ADDR, addr_mapper(hwnd, 
+				IDC_LOD_BASE, IDC_MOD_BASE, value), 8); }
 		break;
 		
 	case IDC_MOD_ADDR:
-		if(!update_mask_chk(IDC_LOD_ADDR))
-			setDlgItemHex64(hwnd, IDC_LOD_ADDR, value + lod_diff, 8);
+		if(!update_mask_chk(IDC_LOD_ADDR)) {
+			setDlgItemHex64(hwnd, IDC_LOD_ADDR, addr_mapper(hwnd, 
+				IDC_MOD_BASE, IDC_LOD_BASE, value), 8); }
 		if(!update_mask_chk(IDC_RVA_ADDR))
 			setDlgItemHex64(hwnd, IDC_RVA_ADDR,	peFile_addrToRva(value), 8);
 		break;
