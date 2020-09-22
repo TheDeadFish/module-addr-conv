@@ -12,3 +12,4 @@
 #define IDC_LIST1                               1006
 #define IDC_LOAD                                1007
 #define IDC_EDIT1                               1008
+#define IDC_RELOAD                              1009

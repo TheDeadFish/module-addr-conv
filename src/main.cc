@@ -12,11 +12,11 @@ const char progName[] = "Module Address Converter";
 AddrList addrList;
 char* modName;
 char* listName;
-
 void addrList_load(cch* name)
 {
-	if(!name) name = "mod-addr.txt";
-	int x = addrList.load(name);
+	int x = addrList.load(name ? name : listName);	
+	if(x) { return; }
+	if(name) { free_repl(listName, getFullPath(name)); }
 }
 
 u64 addrList_lookup()
@@ -62,31 +62,45 @@ void mainDlgInit(HWND hwnd)
 	HFONT hFont = (HFONT) GetStockObject(OEM_FIXED_FONT);
 	sendDlgMsg(hwnd, IDC_LIST1,  WM_SETFONT, (WPARAM)hFont, TRUE);
 	edt_init(hwnd, 0);
-	addrList_load(NULL);
+	addrList_load("mod-addr.txt");
 }
 
-void load_module(HWND hwnd)
+void reset_module(HWND hwnd)
+{
+	setDlgItemText(hwnd, IDC_EDIT1, "");
+	listBox_reset(hwnd, IDC_LIST1);
+}
+
+void load_module(HWND hwnd, char* name)
 {
 	// load the module file
-	OpenFileName ofn;
-	if(!ofn.doModal(hwnd)) return;
-	auto base = peFile_load(ofn.lpstrFile);
-	if(!base) { contError(hwnd, 
-		"failed to load module"); return; }
+	reset_module(hwnd);
+	auto base = peFile_load(name ? name : modName);
+	if(!base) { contError(hwnd, "failed to load module"); return; }
+	if(name) { free_repl(modName, getFullPath(name)); }
 	
-	setDlgItemText(hwnd, IDC_EDIT1, ofn.lpstrFile);
-	free_repl(modName, release(ofn.lpstrFile));
-		
+	setDlgItemText(hwnd, IDC_EDIT1, modName);
 	edt_init(hwnd, base); update_base(hwnd);
 	EnableDlgItem(hwnd, IDC_MOD_BASE, FALSE);
 	EnableDlgItem(hwnd, IDC_RVA_ADDR, TRUE);
 	EnableDlgItem(hwnd, IDC_MOD_OFFS, TRUE);
 
 	// initialize list
-	listBox_reset(hwnd, IDC_LIST1);
 	char buff[64];
 	for(int i = 0; peFile_sect(buff, i); i++)
 		listBox_addStr(hwnd, IDC_LIST1, buff);
+}
+
+void reload_module(HWND hwnd)
+{
+	load_module(hwnd, NULL);
+}
+
+void load_module(HWND hwnd)
+{
+	OpenFileName ofn;
+	if(!ofn.doModal(hwnd)) return;
+	load_module(hwnd, ofn.lpstrFile);
 }
 
 void edt_validate(HWND hwnd, int ctrlId)
@@ -164,6 +178,8 @@ BOOL CALLBACK mainDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	  CASE_COMMAND(
 	    ON_COMMAND(IDCANCEL, EndDialog(hwnd, 0))
 			ON_COMMAND(IDC_LOAD, load_module(hwnd))
+			ON_COMMAND(IDC_RELOAD, reload_module(hwnd))
+			
 
 			ON_CONTROL_RANGE(EN_CHANGE, IDC_MOD_BASE, IDC_RVA_ADDR,
 				edt_update(hwnd, LOWORD(wParam)))
