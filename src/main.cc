@@ -2,8 +2,27 @@
 #include <win32hlp.h>
 #include "resource.h"
 #include "peFile.h"
+#include "addr-list.h"
+
+
 
 const char progName[] = "Module Address Converter";
+
+
+AddrList addrList;
+char* modName;
+char* listName;
+
+void addrList_load(cch* name)
+{
+	if(!name) name = "mod-addr.txt";
+	int x = addrList.load(name);
+}
+
+u64 addrList_lookup()
+{
+	return addrList.lookup(modName);
+}
 
 static 
 u64 getDlgItemHex64(HWND hwnd, int ctrlID)
@@ -31,11 +50,19 @@ void edt_init(HWND hwnd, u64 base)
 	setDlgItemHex64(hwnd, IDC_MOD_ADDR, base, 8);
 }
 
+void update_base(HWND hwnd)
+{
+	u32 base = addrList_lookup();
+	if(base)
+	setDlgItemHex64(hwnd, IDC_LOD_BASE, base, 8);
+}
+
 void mainDlgInit(HWND hwnd)
 {
 	HFONT hFont = (HFONT) GetStockObject(OEM_FIXED_FONT);
 	sendDlgMsg(hwnd, IDC_LIST1,  WM_SETFONT, (WPARAM)hFont, TRUE);
 	edt_init(hwnd, 0);
+	addrList_load(NULL);
 }
 
 void load_module(HWND hwnd)
@@ -46,11 +73,11 @@ void load_module(HWND hwnd)
 	auto base = peFile_load(ofn.lpstrFile);
 	if(!base) { contError(hwnd, 
 		"failed to load module"); return; }
-		
+	
 	setDlgItemText(hwnd, IDC_EDIT1, ofn.lpstrFile);
+	free_repl(modName, release(ofn.lpstrFile));
 		
-		
-	edt_init(hwnd, base);
+	edt_init(hwnd, base); update_base(hwnd);
 	EnableDlgItem(hwnd, IDC_MOD_BASE, FALSE);
 	EnableDlgItem(hwnd, IDC_RVA_ADDR, TRUE);
 	EnableDlgItem(hwnd, IDC_MOD_OFFS, TRUE);
