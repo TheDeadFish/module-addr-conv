@@ -171,10 +171,16 @@ void edt_update(HWND hwnd, int ctrlId)
 	}
 }
 
+void dropFiles(HWND hwnd, LPARAM lParam)
+{
+	xArray<xstr> files = hDropGet((HANDLE)lParam);
+	load_module(hwnd, files[0]);
+}
 
 BOOL CALLBACK mainDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	DLGMSG_SWITCH(
+		ON_MESSAGE(WM_DROPFILES, dropFiles(hwnd, wParam))
 	  CASE_COMMAND(
 	    ON_COMMAND(IDCANCEL, EndDialog(hwnd, 0))
 			ON_COMMAND(IDC_LOAD, load_module(hwnd))
